@@ -22,6 +22,7 @@ use Cwd;
 
 sub safe_cmd {
 	my $cmd = shift;
+    ############# print "$cmd" . "\n";
 	my $output = `$cmd`;
 	if ($? != 0) {
 		die("$cmd failed with exit code $?");
@@ -30,6 +31,7 @@ sub safe_cmd {
 }
 
 sub safe_system {
+    ############# print "@_\n";
 	system(@_) == 0 || die ("system(" . @_ . ") failed!");
 	return 0;
 }
@@ -194,6 +196,8 @@ my $tmp_dir=trim(safe_cmd("mktemp -d -t git-meld.XXXXXX"));
 my $source_dir  = "$tmp_dir/" . (($source_tree eq "") ? "staging_area" : $source_tree);
 my $dest_dir = "$tmp_dir/" . (($dest_tree eq "") ? "working_dir" : $dest_tree);
 
+#############print "tmp_dir = $tmp_dir\n";
+
 safe_system("mkdir -p $source_dir");
 safe_system("mkdir -p $dest_dir");
 
@@ -221,8 +225,14 @@ safe_system("chmod", "-R", "a-w", "$tmp_dir/");
 
 my $tool = get_config_or_default("treediff.tool", "meld");
 my $cmd = get_config_or_default("treediff.$tool.cmd", $tool);
-my $path = get_config_or_default("treediff.$tool.path", "");
-safe_system("$path$cmd", "$source_dir", "$dest_dir");
+# my $path = get_config_or_default("treediff.$tool.path", "");
+my $path = get_config_or_default("treediff.$tool.path", get_config_or_default("$tool.path", ""));
+
+print STDERR "treediff.$tool.path $tool, $cmd, $path\n";
+
+############# print "tool = $tool\n";
+# safe_system("$path$cmd", "$source_dir", "$dest_dir"); # Reversed order
+safe_system("$path$cmd", "$dest_dir", "$source_dir");
 
 safe_system("chmod", "-R", "u+w", "$tmp_dir/");
 safe_system("rm", "-Rf", $tmp_dir);
